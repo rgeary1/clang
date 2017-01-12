@@ -100,6 +100,10 @@ private:
 
   bool FormattingDisabled;
 
+  int ParenLevelCount = 0;
+
+  bool LeaveAsIs = false;
+
   llvm::Regex MacroBlockBeginRegex;
   llvm::Regex MacroBlockEndRegex;
 

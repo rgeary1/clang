@@ -301,6 +301,7 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("CommentPragmas", Style.CommentPragmas);
     IO.mapOptional("BreakBeforeInheritanceComma",
                    Style.BreakBeforeInheritanceComma);
+    IO.mapOptional("LeaveAsIsRegex", Style.LeaveAsIsRegex);
     IO.mapOptional("ConstructorInitializerAllOnOneLineOrOnePerLine",
                    Style.ConstructorInitializerAllOnOneLineOrOnePerLine);
     IO.mapOptional("ConstructorInitializerIndentWidth",

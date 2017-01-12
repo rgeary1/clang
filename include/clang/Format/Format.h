@@ -681,6 +681,9 @@ struct FormatStyle {
   /// \endcode
   bool BreakBeforeInheritanceComma;
 
+  /// \brief A regular expression that describes enums that need to be ignored.
+  std::string LeaveAsIsRegex;
+
   /// \brief If the constructor initializers don't fit on a line, put each
   /// initializer on its own line.
   /// \code
@@ -1126,6 +1129,7 @@ struct FormatStyle {
            BreakStringLiterals == R.BreakStringLiterals &&
            ColumnLimit == R.ColumnLimit && CommentPragmas == R.CommentPragmas &&
            BreakBeforeInheritanceComma == R.BreakBeforeInheritanceComma &&
+           LeaveAsIsRegex == R.LeaveAsIsRegex &&
            ConstructorInitializerAllOnOneLineOrOnePerLine ==
                R.ConstructorInitializerAllOnOneLineOrOnePerLine &&
            ConstructorInitializerIndentWidth ==

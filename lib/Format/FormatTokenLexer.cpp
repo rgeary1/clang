@@ -611,6 +611,34 @@ void FormatTokenLexer::readRawToken(FormatToken &Tok) {
                                Tok.TokenText == "/* clang-format off */")) {
     FormattingDisabled = true;
   }
+
+    if(LeaveAsIs)
+    {
+        if(Tok.is(tok::l_paren))
+        {
+            ParenLevelCount++;
+            Tok.Finalized |= true;
+        }
+        else if(ParenLevelCount == 0)
+        {
+            LeaveAsIs = false;
+        }
+        else
+        {
+            Tok.Finalized |= true;
+
+            if (Tok.is(tok::r_paren)) {
+                ParenLevelCount--;
+            }
+        }
+    }
+
+    llvm::Regex LeaveAsIsRegex(Style.LeaveAsIsRegex);
+    if (LeaveAsIsRegex.match(Tok.TokenText))
+    {
+        LeaveAsIs = true;
+        Tok.Finalized |= true;
+    }
 }
 
 void FormatTokenLexer::resetLexer(unsigned Offset) {

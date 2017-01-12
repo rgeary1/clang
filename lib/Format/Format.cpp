@@ -354,6 +354,7 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("SpaceInEmptyParentheses", Style.SpaceInEmptyParentheses);
     IO.mapOptional("SpacesBeforeTrailingComments",
                    Style.SpacesBeforeTrailingComments);
+    IO.mapOptional("SpaceBeforeTypeEllipsis", Style.SpaceBeforeTypeEllipsis);
     IO.mapOptional("SpacesInAngles", Style.SpacesInAngles);
     IO.mapOptional("SpacesInContainerLiterals",
                    Style.SpacesInContainerLiterals);
@@ -574,6 +575,7 @@ FormatStyle getLLVMStyle() {
   LLVMStyle.SpaceAfterTemplateKeyword = true;
   LLVMStyle.SpaceBeforeParens = FormatStyle::SBPO_ControlStatements;
   LLVMStyle.SpaceBeforeAssignmentOperators = true;
+  LLVMStyle.SpaceBeforeTypeEllipsis = false;
   LLVMStyle.SpacesInAngles = false;
 
   LLVMStyle.PenaltyBreakComment = 300;

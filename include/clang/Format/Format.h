@@ -1060,6 +1060,9 @@ struct FormatStyle {
   /// \endcode
   bool SpacesInSquareBrackets;
 
+  /// \brief If true, space will be inserted before ... elipsis when used after a type
+  bool SpaceBeforeTypeEllipsis;
+
   /// \brief Supported language standards.
   enum LanguageStandard {
     /// Use C++03-compatible syntax.
@@ -1180,6 +1183,7 @@ struct FormatStyle {
            SpacesInCStyleCastParentheses == R.SpacesInCStyleCastParentheses &&
            SpacesInParentheses == R.SpacesInParentheses &&
            SpacesInSquareBrackets == R.SpacesInSquareBrackets &&
+           SpaceBeforeTypeEllipsis == R.SpaceBeforeTypeEllipsis &&
            Standard == R.Standard && TabWidth == R.TabWidth &&
            UseTab == R.UseTab;
   }

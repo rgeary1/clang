@@ -134,6 +134,9 @@ struct FormatStyle {
   /// \endcode
   bool AlignTrailingComments;
 
+  /// \brief If non-zero, maximum number of whitespace padding characters to insert to align tokens.
+  unsigned AlignTokenMaxPadding;
+
   /// \brief Allow putting all parameters of a function declaration onto
   /// the next line even if ``BinPackParameters`` is ``false``.
   /// \code
@@ -1092,6 +1095,7 @@ struct FormatStyle {
            AlignEscapedNewlinesLeft == R.AlignEscapedNewlinesLeft &&
            AlignOperands == R.AlignOperands &&
            AlignTrailingComments == R.AlignTrailingComments &&
+           AlignTokenMaxPadding == R.AlignTokenMaxPadding &&
            AllowAllParametersOfDeclarationOnNextLine ==
                R.AllowAllParametersOfDeclarationOnNextLine &&
            AllowShortBlocksOnASingleLine == R.AllowShortBlocksOnASingleLine &&

@@ -203,7 +203,8 @@ AlignTokenSequence(unsigned Start, unsigned End, unsigned Column, F &&Matches,
     // shifted by the same amount
     if (!FoundMatchOnLine && Matches(Changes[i])) {
       FoundMatchOnLine = true;
-      Shift = Column - Changes[i].StartOfTokenColumn;
+      if(Column > Changes[i].StartOfTokenColumn)
+        Shift = (Column - Changes[i].StartOfTokenColumn);
       Changes[i].Spaces += Shift;
     }
 
@@ -224,6 +225,7 @@ template <typename F>
 static void AlignTokens(const FormatStyle &Style, F &&Matches,
                         SmallVector<WhitespaceManager::Change, 16> &Changes) {
   unsigned MinColumn = 0;
+  unsigned MinMinColumn = UINT_MAX;
   unsigned MaxColumn = UINT_MAX;
 
   // Line number of the start and the end of the current token sequence.
@@ -265,6 +267,13 @@ static void AlignTokens(const FormatStyle &Style, F &&Matches,
     EndOfSequence = 0;
   };
 
+  for (unsigned i = 0, e = Changes.size(); i != e; ++i) {
+    if (!Matches(Changes[i]))
+      continue;
+    unsigned ChangeMinColumn = Changes[i].StartOfTokenColumn;
+
+    MinMinColumn = std::min(MinMinColumn,ChangeMinColumn);
+  }
   for (unsigned i = 0, e = Changes.size(); i != e; ++i) {
     if (Changes[i].NewlinesBefore != 0) {
       CommasBeforeMatch = 0;
@@ -320,7 +329,11 @@ static void AlignTokens(const FormatStyle &Style, F &&Matches,
       StartOfSequence = i;
     }
 
-    MinColumn = std::max(MinColumn, ChangeMinColumn);
+    if ((Style.AlignTokenMaxPadding == 0) ||
+        ((ChangeMinColumn - MinMinColumn) < Style.AlignTokenMaxPadding))
+    {
+      MinColumn = std::max(MinColumn, ChangeMinColumn);
+    }
     MaxColumn = std::min(MaxColumn, ChangeMaxColumn);
   }
 

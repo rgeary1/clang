@@ -1081,6 +1081,9 @@ struct FormatStyle {
   /// \brief The way to use tab characters in the resulting file.
   UseTabStyle UseTab;
 
+  /// \brief If true, indent nested #if/#endif macros as per regular code
+  bool NestedMacroIndent;
+
   bool operator==(const FormatStyle &R) const {
     return AccessModifierOffset == R.AccessModifierOffset &&
            AlignAfterOpenBracket == R.AlignAfterOpenBracket &&
@@ -1137,6 +1140,7 @@ struct FormatStyle {
                R.KeepEmptyLinesAtTheStartOfBlocks &&
            MacroBlockBegin == R.MacroBlockBegin &&
            MacroBlockEnd == R.MacroBlockEnd &&
+           NestedMacroIndent == R.NestedMacroIndent &&
            MaxEmptyLinesToKeep == R.MaxEmptyLinesToKeep &&
            NamespaceIndentation == R.NamespaceIndentation &&
            ObjCBlockIndentWidth == R.ObjCBlockIndentWidth &&

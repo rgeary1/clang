@@ -217,6 +217,10 @@ private:
   // branches during one pass over the code.
   int PPBranchLevel;
 
+  // If >0, search for header guard
+  int m_expectHeaderGuard;
+
+  int m_MacroBlockLevel;
   // Contains the current branch (#if, #else or one of the #elif branches)
   // for each nesting level.
   SmallVector<int, 8> PPLevelBranchIndex;

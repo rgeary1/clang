@@ -58,12 +58,13 @@ private:
 class ScopedMacroState : public FormatTokenSource {
 public:
   ScopedMacroState(UnwrappedLine &Line, FormatTokenSource *&TokenSource,
-                   FormatToken *&ResetToken)
+                   FormatToken *&ResetToken, int m_MacroBlockLevel)
       : Line(Line), TokenSource(TokenSource), ResetToken(ResetToken),
         PreviousLineLevel(Line.Level), PreviousTokenSource(TokenSource),
-        Token(nullptr) {
+        Token(nullptr)
+  {
     TokenSource = this;
-    Line.Level = 0;
+    Line.Level = m_MacroBlockLevel;
     Line.InPPDirective = true;
   }
 
@@ -204,10 +205,11 @@ UnwrappedLineParser::UnwrappedLineParser(const FormatStyle &Style,
     : Line(new UnwrappedLine), MustBreakBeforeNextToken(false),
       CurrentLines(&Lines), Style(Style), Keywords(Keywords),
       CommentPragmasRegex(Style.CommentPragmas), Tokens(nullptr),
-      Callback(Callback), AllTokens(Tokens), PPBranchLevel(-1) {}
+      Callback(Callback), AllTokens(Tokens), PPBranchLevel(-1), m_MacroBlockLevel(0) {}
 
 void UnwrappedLineParser::reset() {
   PPBranchLevel = -1;
+  m_expectHeaderGuard = 2;
   Line.reset(new UnwrappedLine);
   CommentsBeforeNextToken.clear();
   FormatTok = nullptr;
@@ -508,7 +510,12 @@ void UnwrappedLineParser::parseChildBlock() {
 
 void UnwrappedLineParser::parsePPDirective() {
   assert(FormatTok->Tok.is(tok::hash) && "'#' expected");
-  ScopedMacroState MacroState(*Line, Tokens, FormatTok);
+
+  if(! Style.NestedMacroIndent)
+  {
+    m_MacroBlockLevel = 0;
+  }
+  ScopedMacroState MacroState(*Line, Tokens, FormatTok, m_MacroBlockLevel);
   nextToken();
 
   if (!FormatTok->Tok.getIdentifierInfo()) {
@@ -592,6 +599,10 @@ void UnwrappedLineParser::parsePPIf(bool IfDef) {
   bool IfNDef = FormatTok->is(tok::pp_ifndef);
   nextToken();
   bool Unreachable = false;
+  if(Style.NestedMacroIndent)
+  {
+    m_MacroBlockLevel += 1;
+  }
   if (!IfDef && (FormatTok->is(tok::kw_false) || FormatTok->TokenText == "0"))
     Unreachable = true;
   if (IfDef && !IfNDef && FormatTok->TokenText == "SWIG")
@@ -601,6 +612,9 @@ void UnwrappedLineParser::parsePPIf(bool IfDef) {
 }
 
 void UnwrappedLineParser::parsePPElse() {
+  if(Style.NestedMacroIndent) {
+    if (Line->Level>0) { Line->Level -= 1; }
+  }
   conditionalCompilationAlternative();
   parsePPUnknown();
 }
@@ -608,6 +622,10 @@ void UnwrappedLineParser::parsePPElse() {
 void UnwrappedLineParser::parsePPElIf() { parsePPElse(); }
 
 void UnwrappedLineParser::parsePPEndIf() {
+  if(Style.NestedMacroIndent) {
+    if (Line->Level > 0) { Line->Level -= 1; }
+    if (m_MacroBlockLevel>0) { m_MacroBlockLevel -= 1; }
+  }
   conditionalCompilationEnd();
   parsePPUnknown();
 }
@@ -626,7 +644,8 @@ void UnwrappedLineParser::parsePPDefine() {
     parseParens();
   }
   addUnwrappedLine();
-  Line->Level = 1;
+  // A macro definition which continues on to subsequent lines should be indented
+  Line->Level = m_MacroBlockLevel + 1;
 
   // Errors during a preprocessor directive can only affect the layout of the
   // preprocessor directive, and thus we ignore them. An alternative approach
@@ -1467,7 +1486,7 @@ void UnwrappedLineParser::parseIfThenElse() {
     addUnwrappedLine();
     ++Line->Level;
     parseStructuralElement();
-    --Line->Level;
+    if (Line->Level > 0) { --Line->Level; }
   }
   if (FormatTok->Tok.is(tok::kw_else)) {
     nextToken();
@@ -1481,9 +1500,10 @@ void UnwrappedLineParser::parseIfThenElse() {
       addUnwrappedLine();
       ++Line->Level;
       parseStructuralElement();
-      if (FormatTok->is(tok::eof))
+      if (FormatTok->is(tok::eof)) {
         addUnwrappedLine();
-      --Line->Level;
+      }
+      if (Line->Level > 0) { --Line->Level; }
     }
   } else if (NeedsUnwrappedLine) {
     addUnwrappedLine();
@@ -1524,7 +1544,7 @@ void UnwrappedLineParser::parseTryCatch() {
     addUnwrappedLine();
     ++Line->Level;
     parseStructuralElement();
-    --Line->Level;
+    if (Line->Level > 0) { --Line->Level; }
   }
   while (1) {
     if (FormatTok->is(tok::at))
@@ -2284,6 +2304,31 @@ void UnwrappedLineParser::readToken() {
   SmallVector<FormatToken *, 1> Comments;
   do {
     FormatTok = Tokens->getNextToken();
+    // This avoids indenting ifdef guard definitions at the beginning of the file.
+    if (Style.NestedMacroIndent && m_expectHeaderGuard > 0)
+    {
+      m_MacroBlockLevel = 0;
+      if (FormatTok->Tok.getIdentifierInfo())
+      {
+        tok::PPKeywordKind ppKind = FormatTok->Tok.getIdentifierInfo()->getPPKeywordID();
+
+        if (ppKind == tok::pp_if || ppKind == tok::pp_ifndef)
+        {
+            // Found the header guard if !defined / ifndef
+            if (m_expectHeaderGuard > 0) { m_expectHeaderGuard -= 1; }
+        }
+        else if (ppKind == tok::pp_ifdef || ppKind == tok::pp_define || ppKind == tok::pp_else || ppKind == tok::pp_elif)
+        {
+          // Found the header guard define, stop searching
+          m_expectHeaderGuard = 0;
+        }
+      }
+      else if (!Line->InPPDirective && !FormatTok->Tok.is(tok::comment) && !FormatTok->is(tok::hash))
+      {
+          // Finished the header guard
+          m_expectHeaderGuard = 0;
+      }
+    }
     assert(FormatTok);
     while (!Line->InPPDirective && FormatTok->Tok.is(tok::hash) &&
            (FormatTok->HasUnescapedNewline || FormatTok->IsFirst)) {

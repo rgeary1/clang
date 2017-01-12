@@ -203,6 +203,8 @@ struct ParenState {
   /// Used to align further variables if necessary.
   unsigned VariablePos = 0;
 
+  unsigned LogicalOperatorCount = 0;
+
   /// \brief Whether a newline needs to be inserted before the block's closing
   /// brace.
   ///
@@ -295,6 +297,8 @@ struct ParenState {
       return CallContinuation < Other.CallContinuation;
     if (VariablePos != Other.VariablePos)
       return VariablePos < Other.VariablePos;
+    if (LogicalOperatorCount != Other.LogicalOperatorCount)
+      return LogicalOperatorCount < Other.LogicalOperatorCount;
     if (ContainsLineBreak != Other.ContainsLineBreak)
       return ContainsLineBreak;
     if (ContainsUnwrappedBuilder != Other.ContainsUnwrappedBuilder)

@@ -932,6 +932,10 @@ struct FormatStyle {
   /// line.
   unsigned PenaltyReturnTypeOnItsOwnLine;
 
+  /// \brief Penalty for having more than one logical operator in the same
+  // scope on a line which needs wrapping
+  unsigned PenaltyBreakOnLogicalOperators;
+
   /// \brief The ``&`` and ``*`` alignment style.
   enum PointerAlignmentStyle {
     /// Align pointer to the left.
@@ -1157,6 +1161,7 @@ struct FormatStyle {
            PenaltyBreakString == R.PenaltyBreakString &&
            PenaltyExcessCharacter == R.PenaltyExcessCharacter &&
            PenaltyReturnTypeOnItsOwnLine == R.PenaltyReturnTypeOnItsOwnLine &&
+           PenaltyBreakOnLogicalOperators == R.PenaltyBreakOnLogicalOperators &&
            PointerAlignment == R.PointerAlignment &&
            SpaceAfterCStyleCast == R.SpaceAfterCStyleCast &&
            SpaceAfterTemplateKeyword == R.SpaceAfterTemplateKeyword &&

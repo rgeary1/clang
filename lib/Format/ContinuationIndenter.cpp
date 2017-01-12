@@ -63,6 +63,24 @@ static bool startsNextParameter(const FormatToken &Current,
           !Style.BreakBeforeInheritanceComma));
 }
 
+// Returns \c true if \c Current starts a new test operator.
+static bool isLogicalOperator(const FormatToken &Current,
+                                const FormatStyle &Style) {
+  const FormatToken * Previous = Current.Previous;
+  if (Style.BreakBeforeBinaryOperators
+     && Current.isOneOf(tok::ampamp, tok::pipepipe, tok::amp, tok::pipe))
+  {
+    return true;
+  }
+  else if (!Style.BreakBeforeBinaryOperators
+     && Previous && Previous->isOneOf(tok::ampamp, tok::pipepipe, tok::amp, tok::pipe))
+  {
+    return true;
+  }
+  return false;
+}
+
+
 ContinuationIndenter::ContinuationIndenter(const FormatStyle &Style,
                                            const AdditionalKeywords &Keywords,
                                            const SourceManager &SourceMgr,
@@ -764,6 +782,23 @@ unsigned ContinuationIndenter::moveStateToNextToken(LineState &State,
                                                     bool DryRun, bool Newline) {
   assert(State.Stack.size());
   const FormatToken &Current = *State.NextToken;
+  unsigned Penalty = 0;
+
+  if (isLogicalOperator(Current, Style))
+  {
+    State.Stack.back().LogicalOperatorCount += 1;
+
+    unsigned numOperators = (State.Stack.back().LogicalOperatorCount);
+
+    // Only assign penalty if there is more than 1 logical operator in this scope
+    if (numOperators>1) {
+        Penalty += (Newline?0:1) * numOperators * Style.PenaltyBreakOnLogicalOperators;
+        // Add a delayed penalty if the prior operator wasn't wrapped
+        // We need this as we can't parse forwards when we see the first operator to see how many there are in the scope
+        Penalty += ((!State.Stack.back().LastOperatorWrapped) * Style.PenaltyBreakOnLogicalOperators);
+    }
+  }
+
 
   if (Current.isOneOf(tok::comma, TT_BinaryOperator))
     State.Stack.back().NoLineBreakInOperand = false;
@@ -874,14 +909,12 @@ unsigned ContinuationIndenter::moveStateToNextToken(LineState &State,
 
   State.Column += Current.ColumnWidth;
   State.NextToken = State.NextToken->Next;
-  unsigned Penalty = 0;
   if (CanBreakProtrudingToken)
-    Penalty = breakProtrudingToken(Current, State, DryRun);
+    Penalty += breakProtrudingToken(Current, State, DryRun);
   if (State.Column > getColumnLimit(State)) {
     unsigned ExcessCharacters = State.Column - getColumnLimit(State);
     Penalty += Style.PenaltyExcessCharacter * ExcessCharacters;
   }
-
   if (Current.Role)
     Current.Role->formatFromToken(State, this, DryRun);
   // If the previous has a special role, let it consume tokens as appropriate.

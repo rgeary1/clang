@@ -341,6 +341,7 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("PenaltyExcessCharacter", Style.PenaltyExcessCharacter);
     IO.mapOptional("PenaltyReturnTypeOnItsOwnLine",
                    Style.PenaltyReturnTypeOnItsOwnLine);
+    IO.mapOptional("PenaltyBreakOnLogicalOperators", Style.PenaltyBreakOnLogicalOperators);
     IO.mapOptional("PointerAlignment", Style.PointerAlignment);
     IO.mapOptional("ReflowComments", Style.ReflowComments);
     IO.mapOptional("SortIncludes", Style.SortIncludes);
@@ -578,6 +579,7 @@ FormatStyle getLLVMStyle() {
   LLVMStyle.PenaltyExcessCharacter = 1000000;
   LLVMStyle.PenaltyReturnTypeOnItsOwnLine = 60;
   LLVMStyle.PenaltyBreakBeforeFirstCallParameter = 19;
+  LLVMStyle.PenaltyBreakOnLogicalOperators = 0;
 
   LLVMStyle.DisableFormat = false;
   LLVMStyle.SortIncludes = true;

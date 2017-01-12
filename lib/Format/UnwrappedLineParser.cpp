@@ -1680,7 +1680,7 @@ void UnwrappedLineParser::parseLabel() {
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock(/*MustBeDeclaration=*/false);
     if (FormatTok->Tok.is(tok::kw_break)) {
-      if (Style.BraceWrapping.AfterControlStatement)
+      if (Style.BraceWrapping.AfterControlStatement && Style.BraceWrapping.BeforeCaseBreak)
         addUnwrappedLine();
       parseStructuralElement();
     }

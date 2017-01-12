@@ -618,6 +618,8 @@ struct FormatStyle {
     ///   }
     /// \endcode
     bool BeforeElse;
+    /// \brief If false, do not wrap before the break keyword when closing the scope of a case statement
+    bool BeforeCaseBreak;
     /// \brief Indent the wrapped braces themselves.
     bool IndentBraces;
   };

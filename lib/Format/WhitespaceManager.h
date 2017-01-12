@@ -158,7 +158,10 @@ private:
   void calculateLineBreakInformation();
 
   /// \brief Align consecutive assignments over all \c Changes.
-  void alignConsecutiveAssignments();
+  void alignConsecutiveNonDeclarationAssignments();
+
+  /// \brief Align consecutive declaration assignments over all \c Changes.
+  void alignConsecutiveDeclarationAssignments();
 
   /// \brief Align consecutive declarations over all \c Changes.
   void alignConsecutiveDeclarations();

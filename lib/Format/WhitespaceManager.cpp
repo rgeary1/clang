@@ -88,7 +88,8 @@ const tooling::Replacements &WhitespaceManager::generateReplacements() {
   std::sort(Changes.begin(), Changes.end(), Change::IsBeforeInFile(SourceMgr));
   calculateLineBreakInformation();
   alignConsecutiveDeclarations();
-  alignConsecutiveAssignments();
+  alignConsecutiveDeclarationAssignments();
+  alignConsecutiveNonDeclarationAssignments();
   alignTrailingComments();
   alignEscapedNewlines();
   generateChanges();
@@ -128,15 +129,15 @@ void WhitespaceManager::calculateLineBreakInformation() {
         // BreakableLineCommentSection does comment reflow changes and here is
         // the aligning of trailing comments. Consider the case where we reflow
         // the second line up in this example:
-        // 
+        //
         // // line 1
         // // line 2
-        // 
+        //
         // That amounts to 2 changes by BreakableLineCommentSection:
         //  - the first, delimited by (), for the whitespace between the tokens,
         //  - and second, delimited by [], for the whitespace at the beginning
         //  of the second token:
-        // 
+        //
         // // line 1(
         // )[// ]line 2
         //
@@ -341,21 +342,23 @@ static void AlignTokens(const FormatStyle &Style, F &&Matches,
   AlignCurrentSequence();
 }
 
-void WhitespaceManager::alignConsecutiveAssignments() {
+void WhitespaceManager::alignConsecutiveNonDeclarationAssignments() {
   if (!Style.AlignConsecutiveAssignments)
     return;
 
   AlignTokens(Style,
               [&](const Change &C) {
-                // Do not align on equal signs that are first on a line.
-                if (C.NewlinesBefore > 0)
-                  return false;
 
-                // Do not align on equal signs that are last on a line.
-                if (&C != &Changes.back() && (&C + 1)->NewlinesBefore > 0)
-                  return false;
+                  // Do not align on equal signs that are first on a line.
+                  if (C.NewlinesBefore > 0)
+                    return false;
 
-                return C.Tok->is(tok::equal);
+                  // Do not align on equal signs that are last on a line.
+                  if (&C != &Changes.back() && (&C + 1)->NewlinesBefore > 0)
+                    return false;
+
+                  // Align only non declarative assignments
+                  return (C.Tok->is(tok::equal)) && ((&C == &Changes.front()) || (!(&C - 1)->Tok->isOneOf(TT_StartOfName, TT_FunctionDeclarationName)));
               },
               Changes);
 }
@@ -375,6 +378,27 @@ void WhitespaceManager::alignConsecutiveDeclarations() {
               [](Change const &C) {
                 return C.Tok->isOneOf(TT_StartOfName,
                                       TT_FunctionDeclarationName);
+              },
+              Changes);
+}
+
+void WhitespaceManager::alignConsecutiveDeclarationAssignments(){
+  if (!Style.AlignConsecutiveAssignments)
+    return;
+
+  AlignTokens(Style,
+              [&](const Change &C) {
+
+                  // Do not align on equal signs that are first on a line.
+                  if (C.NewlinesBefore > 0)
+                    return false;
+
+                  // Do not align on equal signs that are last on a line.
+                  if (&C != &Changes.back() && (&C + 1)->NewlinesBefore > 0)
+                    return false;
+
+                  // Align only declarative assignments
+                  return (C.Tok->is(tok::equal)) && ((&C == &Changes.front()) || ((&C - 1)->Tok->isOneOf(TT_StartOfName, TT_FunctionDeclarationName)));
               },
               Changes);
 }
